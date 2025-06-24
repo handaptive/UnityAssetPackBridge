@@ -1,0 +1,29 @@
+{
+  "name": "ai.assetpack.bridge",
+  "version": "0.0.1",
+  "displayName": "Asset Pack Bridge",
+  "description": "A tool to help you download your asset pack into your Unity project.",
+  "unity": "2019.1",
+  "unityRelease": "0b5",
+  "documentationUrl": "https://example.com/",
+  "changelogUrl": "https://example.com/changelog.html",
+  "licensesUrl": "https://example.com/licensing.html",
+  "dependencies": {},
+  "keywords": [
+    "assetpack",
+    "asset",
+    "pack",
+    "unity",
+    "bridge",
+    "sync",
+    "download",
+    "art",
+    "3d",
+    "models"
+  ],
+  "author": {
+    "name": "Handaptive",
+    "email": "handaptive@gmail.com",
+    "url": "https://handaptive.com/"
+  }
+}

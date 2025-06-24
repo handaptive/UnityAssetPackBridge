@@ -1,0 +1,14 @@
+{
+    "name": "AssetPack.Bridge.Editor",
+    "rootNamespace": "AssetPack.Bridge.Editor",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
