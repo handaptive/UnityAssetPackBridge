@@ -191,6 +191,15 @@ namespace AssetPack.Bridge.Editor
       return Path.Combine(GetModelFolder(packName, modelName), fileName);
     }
 
+    public static string AssetRelativePath(string absolutePath)
+    {
+      if (absolutePath.StartsWith(Application.dataPath))
+      {
+        return "Assets" + absolutePath[Application.dataPath.Length..];
+      }
+      return absolutePath;
+    }
+
     [System.Serializable]
     private class Config
     {

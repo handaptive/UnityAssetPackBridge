@@ -39,13 +39,20 @@ namespace AssetPack.Bridge.Editor
   }
 
   [System.Serializable]
+  public class PackDownloadInput
+  {
+    public string packId;
+  }
+
+  [System.Serializable]
   public class PackDownloadOutput
   {
     [System.Serializable]
     public class Model
     {
       public string name;
-      public string downloadUrl;
+      public string fbxUrl;
+      public string diffuseUrl;
     }
 
     public Model[] models;
@@ -159,9 +166,9 @@ namespace AssetPack.Bridge.Editor
       yield return SendRequest(name, args, data, Utility.GetIdToken());
     }
 
-    public static IEnumerator GetDownloadablePack(RequestArgs<PackDownloadOutput> args)
+    public static IEnumerator GetDownloadablePack(PackDownloadInput input, RequestArgs<PackDownloadOutput> args)
     {
-      yield return SendAuthorizedRequest("pack/download", args, "{}");
+      yield return SendAuthorizedRequest("pack/download", args, JsonUtility.ToJson(input));
     }
 
     public static IEnumerator DownloadFile(string path, string downloadUrl)
