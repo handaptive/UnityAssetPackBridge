@@ -32,40 +32,17 @@ namespace AssetPack.Bridge.Editor
       _callback.Errored -= OnCallbackErrored;
     }
 
-    private IEnumerator DownloadFbxToAsset(string name, string downloadUrl)
-    {
-      Utility.Log($"Downloading FBX: {name} from {downloadUrl}");
-      using UnityWebRequest request = UnityWebRequest.Get(downloadUrl);
-      string filePath = System.IO.Path.Combine(Application.persistentDataPath, name + ".fbx");
-      request.downloadHandler = new DownloadHandlerFile(filePath);
-
-      yield return request.SendWebRequest();
-
-#if UNITY_2020_1_OR_NEWER
-      if (request.result != UnityWebRequest.Result.Success)
-#else
-        if (request.isNetworkError || request.isHttpError)
-#endif
-      {
-        Utility.Log($"Failed to download FBX: {request.error}");
-      }
-      else
-      {
-        Utility.Log($"FBX downloaded to: {filePath}");
-      }
-    }
-
     private IEnumerator StartDownloadPack()
     {
       Utility.Log("Starting pack download...");
 
       PackDownloadOutput output = null;
-      yield return BridgeAPI.DownloadPack(new RequestArgs<PackDownloadOutput>
+      yield return BridgeAPI.GetDownloadablePack(new RequestArgs<PackDownloadOutput>
       {
         onSuccess = (result) =>
         {
-          Utility.Log($"Pack downloaded successfully: {output.models.Length} models found.");
           output = result;
+          Utility.Log($"Pack downloaded successfully: {output.models.Length} models found.");
         },
         onError = (error) =>
         {
@@ -84,7 +61,8 @@ namespace AssetPack.Bridge.Editor
       {
         var model = output.models[i];
         Utility.Log($"Model {i + 1}/{output.models.Length}: {model.name} - Download URL: {model.downloadUrl}");
-        yield return DownloadFbxToAsset(model.name, model.downloadUrl);
+        var path = Utility.GetModelFilePath("myPack", model.name, "mesh.fbx");
+        yield return BridgeAPI.DownloadFile(path, model.downloadUrl);
       }
     }
 
