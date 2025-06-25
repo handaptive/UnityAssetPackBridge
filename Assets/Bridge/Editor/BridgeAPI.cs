@@ -82,7 +82,11 @@ namespace AssetPack.Bridge.Editor
       var request = BuildRequest(name, data, token);
       Utility.Log($"Sending request to {request.url} with data: {data}");
       yield return request.SendWebRequest();
+#if UNITY_2020_1_OR_NEWER
       if (request.result != UnityWebRequest.Result.Success)
+#else
+      if (request.isNetworkError || request.isHttpError)
+#endif
       {
         Utility.LogError($"Request failed: {request.error}");
         args.onError?.Invoke(request.error);
@@ -155,9 +159,31 @@ namespace AssetPack.Bridge.Editor
       yield return SendRequest(name, args, data, Utility.GetIdToken());
     }
 
-    public static IEnumerator DownloadPack(RequestArgs<PackDownloadOutput> args)
+    public static IEnumerator GetDownloadablePack(RequestArgs<PackDownloadOutput> args)
     {
       yield return SendAuthorizedRequest("pack/download", args, "{}");
+    }
+
+    public static IEnumerator DownloadFile(string path, string downloadUrl)
+    {
+      Utility.Log($"Downloading file from {downloadUrl} to {path}");
+      using UnityWebRequest request = UnityWebRequest.Get(downloadUrl);
+      request.downloadHandler = new DownloadHandlerFile(path);
+
+      yield return request.SendWebRequest();
+
+#if UNITY_2020_1_OR_NEWER
+      if (request.result != UnityWebRequest.Result.Success)
+#else
+      if (request.isNetworkError || request.isHttpError)
+#endif
+      {
+        Utility.Log($"Failed to download file: {request.error}");
+      }
+      else
+      {
+        Utility.Log($"File downloaded to: {path}");
+      }
     }
   }
 }

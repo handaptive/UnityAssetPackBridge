@@ -152,6 +152,45 @@ namespace AssetPack.Bridge.Editor
       Log("ID token expiration marked for 50 minutes from now.");
     }
 
+    private static string FormatName(string name)
+    {
+      return System.Text.RegularExpressions.Regex.Replace(name.ToLower(), @"[^a-z0-9]", "_");
+    }
+
+    public static string GetFolder(string folderName)
+    {
+      var assetsFolderPath = Application.dataPath;
+      var targetFolderPath = Path.Combine(assetsFolderPath, folderName);
+
+      if (!Directory.Exists(targetFolderPath))
+      {
+        Directory.CreateDirectory(targetFolderPath);
+        Log($"Created folder: {targetFolderPath}");
+      }
+
+      return targetFolderPath;
+    }
+
+    public static string GetPacksFolder()
+    {
+      return GetFolder(Path.Combine(Application.dataPath, "AssetPacks"));
+    }
+
+    public static string GetPackFolder(string packName)
+    {
+      return GetFolder(Path.Combine(GetPacksFolder(), FormatName(packName)));
+    }
+
+    public static string GetModelFolder(string packName, string modelName)
+    {
+      return GetFolder(Path.Combine(GetPackFolder(packName), FormatName(modelName)));
+    }
+
+    public static string GetModelFilePath(string packName, string modelName, string fileName)
+    {
+      return Path.Combine(GetModelFolder(packName, modelName), fileName);
+    }
+
     [System.Serializable]
     private class Config
     {
