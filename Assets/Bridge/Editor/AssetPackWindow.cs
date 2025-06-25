@@ -37,19 +37,21 @@ namespace AssetPack.Bridge.Editor
       Utility.Log("Starting pack download...");
 
       PackDownloadOutput output = null;
-      yield return BridgeAPI.GetDownloadablePack(new RequestArgs<PackDownloadOutput>
-      {
-        onSuccess = (result) =>
+      yield return BridgeAPI.GetDownloadablePack(
+        new PackDownloadInput() { packId = "1qX25o7jTsWrQyzQRgqh" },
+        new RequestArgs<PackDownloadOutput>
         {
-          output = result;
-          Utility.Log($"Pack downloaded successfully: {output.models.Length} models found.");
-        },
-        onError = (error) =>
-        {
-          Utility.LogError($"Pack download failed: {error}");
-          _errorMessage = error;
-        }
-      });
+          onSuccess = (result) =>
+          {
+            output = result;
+            Utility.Log($"Pack downloaded successfully: {output.models.Length} models found.");
+          },
+          onError = (error) =>
+          {
+            Utility.LogError($"Pack download failed: {error}");
+            _errorMessage = error;
+          }
+        });
 
       if (output == null)
       {
@@ -60,10 +62,65 @@ namespace AssetPack.Bridge.Editor
       for (int i = 0; i < output.models.Length; i++)
       {
         var model = output.models[i];
-        Utility.Log($"Model {i + 1}/{output.models.Length}: {model.name} - Download URL: {model.downloadUrl}");
-        var path = Utility.GetModelFilePath("myPack", model.name, "mesh.fbx");
-        yield return BridgeAPI.DownloadFile(path, model.downloadUrl);
+        Utility.Log($"Model {i + 1}/{output.models.Length}: {model.name}");
+
+        var meshPath = Utility.GetModelFilePath("myPack", model.name, "mesh.fbx");
+        yield return BridgeAPI.DownloadFile(meshPath, model.fbxUrl);
+
+        var diffusePath = Utility.GetModelFilePath("myPack", model.name, "diffuse.png");
+        yield return BridgeAPI.DownloadFile(diffusePath, model.diffuseUrl);
+
+        // Refresh asset database to ensure texture is imported
+        AssetDatabase.ImportAsset(Utility.AssetRelativePath(diffusePath));
+        AssetDatabase.Refresh();
+
+        var materialPath = Utility.GetModelFilePath("myPack", model.name, "material.mat");
+        Utility.Log($"Creating material at {materialPath}");
+        var material = new Material(Shader.Find("Universal Render Pipeline/Lit"))
+        {
+          mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(Utility.AssetRelativePath(diffusePath))
+        };
+        // remove smoothness and metallic properties
+        material.SetFloat("_Smoothness", 0f);
+        material.SetFloat("_Metallic", 0f);
+        AssetDatabase.CreateAsset(material, Utility.AssetRelativePath(materialPath));
+
+        var prefabPath = Utility.GetModelFilePath("myPack", model.name, "prefab.prefab");
+        Utility.Log($"Creating prefab at {prefabPath}");
+        var prefab = new GameObject(model.name);
+
+        // Load and instantiate the mesh as a child
+        var meshAsset = AssetDatabase.LoadAssetAtPath<GameObject>(Utility.AssetRelativePath(meshPath));
+        if (meshAsset != null)
+        {
+          var meshInstance = Instantiate(meshAsset, prefab.transform);
+          meshInstance.name = model.name + "_Mesh";
+        }
+
+        // // Assign the material to the mesh
+        // var meshRenderer = prefab.GetComponentInChildren<Renderer>();
+        // if (meshRenderer != null)
+        // {
+        //   Utility.Log($"Assigning material to mesh renderer: {meshRenderer.name}");
+        //   meshRenderer.material = material;
+        //   meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+        //   meshRenderer.receiveShadows = true;
+        // }
+
+        // Save the prefab
+        PrefabUtility.SaveAsPrefabAsset(prefab, Utility.AssetRelativePath(prefabPath));
+        Utility.Log($"Prefab created at {prefabPath}");
+
+        // Clean up the temporary prefab GameObject
+        DestroyImmediate(prefab);
+        Utility.Log($"Temporary prefab GameObject destroyed.");
       }
+
+      Utility.Log($"All models downloaded successfully.");
+      AssetDatabase.SaveAssets();
+      AssetDatabase.Refresh();
+      _downloadRoutine = null;
+      ClearError();
     }
 
     private void ClearError()
