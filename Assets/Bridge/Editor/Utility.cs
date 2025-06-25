@@ -116,72 +116,10 @@ namespace AssetPack.Bridge.Editor
       return (int)(System.DateTime.UtcNow - new System.DateTime(1970, 1, 1)).TotalSeconds;
     }
 
-    private static RefreshTokenPayload GetRefreshTokenPayload()
-    {
-      var base64Token = GetRefreshToken();
-      if (string.IsNullOrEmpty(base64Token))
-      {
-        return null;
-      }
-
-      var tokenParts = base64Token.Split('.');
-      if (tokenParts.Length < 2)
-      {
-        LogError("Invalid refresh token format.");
-        return null;
-      }
-
-      var payloadPart = tokenParts[1];
-      if (string.IsNullOrEmpty(payloadPart))
-      {
-        LogError("Refresh token payload is empty.");
-        return null;
-      }
-
-      // Replace URL-safe characters with standard Base64 characters
-      string base64 = payloadPart.Replace('-', '+').Replace('_', '/');
-      switch (base64.Length % 4)
-      {
-        case 2: base64 += "=="; break;
-        case 3: base64 += "="; break;
-      }
-
-      try
-      {
-        var payloadJson = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(base64));
-        return JsonUtility.FromJson<RefreshTokenPayload>(payloadJson);
-      }
-      catch (System.Exception ex)
-      {
-        LogError($"Error parsing refresh token: {ex.Message}");
-        return null;
-      }
-    }
-
     public static bool IsAuthorized()
     {
-      var payload = GetRefreshTokenPayload();
-      if (payload == null)
-      {
-        ClearTokens();
-        return false;
-      }
-
-      var refreshExp = payload?.exp ?? 0;
-      var now = Now();
-      if (refreshExp < now)
-      {
-        ClearTokens();
-        return false;
-      }
-
-      return true;
-    }
-
-    [System.Serializable]
-    private class RefreshTokenPayload
-    {
-      public int exp;
+      var refreshToken = GetRefreshToken();
+      return !string.IsNullOrEmpty(refreshToken);
     }
 
     [System.Serializable]
