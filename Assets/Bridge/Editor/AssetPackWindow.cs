@@ -112,7 +112,7 @@ namespace AssetPack.Bridge.Editor
       GUILayout.Label(WindowName, EditorStyles.boldLabel);
       GUILayout.Space(10);
 
-      if (Utility.IsAuthorized())
+      if (Utility.IsLoggedIn())
       {
         AuthGUI();
       }

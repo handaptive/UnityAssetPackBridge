@@ -117,9 +117,47 @@ namespace AssetPack.Bridge.Editor
       yield return SendRequest("callback/poll", args, data);
     }
 
+    private static IEnumerator SendAuthorizedRequest<O>(string name, RequestArgs<O> args, string data)
+    {
+      if (!Utility.IsLoggedIn())
+      {
+        Utility.LogError("User is not logged in. Cannot send authorized request.");
+        args.onError?.Invoke("User is not logged in.");
+        yield break;
+      }
+
+      if (!Utility.IsIdTokenValid())
+      {
+        bool errored = false;
+        Utility.Log("ID token is expired. Refreshing token...");
+        yield return RefreshToken(new RequestArgs<AuthRefreshTokenOutput>
+        {
+          onSuccess = (output) =>
+          {
+            Utility.SetIdToken(output.idToken);
+            Utility.SetRefreshToken(output.refreshToken);
+            Utility.MarkIdTokenExpiration();
+          },
+          onError = (error) =>
+          {
+            Utility.LogError($"Failed to refresh token: {error}");
+            args.onError?.Invoke(error);
+            errored = true;
+          }
+        }, new AuthRefreshTokenInput { refreshToken = Utility.GetRefreshToken() });
+
+        if (errored)
+        {
+          yield break;
+        }
+      }
+
+      yield return SendRequest(name, args, data, Utility.GetIdToken());
+    }
+
     public static IEnumerator DownloadPack(RequestArgs<PackDownloadOutput> args)
     {
-      yield return SendRequest("pack/download", args, "{}", Utility.GetIdToken());
+      yield return SendAuthorizedRequest("pack/download", args, "{}");
     }
   }
 }

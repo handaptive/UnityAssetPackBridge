@@ -105,21 +105,51 @@ namespace AssetPack.Bridge.Editor
       return EditorPrefs.GetString(GetRefreshTokenKey(), string.Empty);
     }
 
+    private static string GetIdtokenExpirationKey()
+    {
+      return $"assetpack_id_token_expiration_{GetFlavor()}";
+    }
+
+    public static void SetIdTokenExpiration(int expiration)
+    {
+      EditorPrefs.SetInt(GetIdtokenExpirationKey(), expiration);
+      Log("ID token expiration set: " + expiration);
+    }
+
+    public static int GetIdTokenExpiration()
+    {
+      return EditorPrefs.GetInt(GetIdtokenExpirationKey(), 0);
+    }
+
     public static void ClearTokens()
     {
       EditorPrefs.DeleteKey(GetIdTokenKey());
       EditorPrefs.DeleteKey(GetRefreshTokenKey());
+      EditorPrefs.DeleteKey(GetIdtokenExpirationKey());
     }
 
-    public static int Now()
+    public static int NowSeconds()
     {
       return (int)(System.DateTime.UtcNow - new System.DateTime(1970, 1, 1)).TotalSeconds;
     }
 
-    public static bool IsAuthorized()
+    public static bool IsLoggedIn()
     {
       var refreshToken = GetRefreshToken();
       return !string.IsNullOrEmpty(refreshToken);
+    }
+
+    public static bool IsIdTokenValid()
+    {
+      var expiration = GetIdTokenExpiration();
+      Log($"Checking ID token expiration: {expiration} (now: {NowSeconds()})");
+      return expiration > NowSeconds();
+    }
+
+    public static void MarkIdTokenExpiration()
+    {
+      SetIdTokenExpiration(NowSeconds() + 60 * 50);
+      Log("ID token expiration marked for 50 minutes from now.");
     }
 
     [System.Serializable]
