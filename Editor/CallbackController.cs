@@ -91,6 +91,7 @@ namespace AssetPack.Bridge.Editor
       // Set tokens
       Utility.SetIdToken(successOutput.idToken);
       Utility.SetRefreshToken(successOutput.refreshToken);
+      Utility.MarkIdTokenExpiration();
 
       Utility.Log("Callback completed successfully.");
       Finished?.Invoke();
