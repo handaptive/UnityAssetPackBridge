@@ -6,8 +6,9 @@ namespace AssetPack.Bridge.Editor
   public class AssetPackWindow : EditorWindow
   {
     public const string WindowName = "Asset Pack";
+    private string _errorMessage = string.Empty;
 
-    private LoopbackServer _loopback = new();
+    private CallbackController _callback = new();
 
     [MenuItem("Window/Asset Pack")]
     public static void ShowWindow()
@@ -17,20 +18,32 @@ namespace AssetPack.Bridge.Editor
 
     private void OnEnable()
     {
-      titleContent = new GUIContent(WindowName);
-      _loopback.Start();
-      _loopback.LoggedIn += OnLoggedIn;
+      _callback.Finished += OnCallbackFinished;
+      _callback.Errored += OnCallbackErrored;
     }
 
     private void OnDisable()
     {
-      _loopback.Stop();
-      _loopback.LoggedIn -= OnLoggedIn;
+      _callback.Finished -= OnCallbackFinished;
+      _callback.Errored -= OnCallbackErrored;
     }
 
-    private void OnLoggedIn()
+    private void ClearError()
+    {
+      _errorMessage = string.Empty;
+    }
+
+    private void OnCallbackFinished()
     {
       Utility.Log("User logged in successfully.");
+      ClearError();
+      Repaint();
+    }
+
+    private void OnCallbackErrored(string error)
+    {
+      Utility.LogError($"Login failed: {error}");
+      _errorMessage = error;
       Repaint();
     }
 
@@ -38,14 +51,6 @@ namespace AssetPack.Bridge.Editor
     {
       GUILayout.Label(WindowName, EditorStyles.boldLabel);
       GUILayout.Space(10);
-
-      if (GUILayout.Button("Restart server"))
-      {
-        Utility.Log("Restarting loopback server...");
-        _loopback.Stop();
-        _loopback.Start();
-        Repaint();
-      }
 
       if (Utility.IsAuthorized())
       {
@@ -62,10 +67,17 @@ namespace AssetPack.Bridge.Editor
       GUILayout.Label("You are not logged in.", EditorStyles.boldLabel);
       GUILayout.Space(10);
 
+      if (!string.IsNullOrEmpty(_errorMessage))
+      {
+        GUILayout.Label($"Error: {_errorMessage}", EditorStyles.wordWrappedLabel);
+        GUILayout.Space(10);
+      }
+
       if (GUILayout.Button("Login"))
       {
         Utility.Log("Starting login process...");
-        Application.OpenURL($"{Utility.GetWebsiteUrl()}/login?callback={_loopback.CallbackUrlBase64}");
+        _callback.Start();
+        ClearError();
       }
 
       GUILayout.Space(10);
