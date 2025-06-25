@@ -38,6 +38,19 @@ namespace AssetPack.Bridge.Editor
     public string refreshToken;
   }
 
+  [System.Serializable]
+  public class PackDownloadOutput
+  {
+    [System.Serializable]
+    public class Model
+    {
+      public string name;
+      public string downloadUrl;
+    }
+
+    public Model[] models;
+  }
+
   public struct RequestArgs<O>
   {
     public System.Action<O> onSuccess;
@@ -81,6 +94,7 @@ namespace AssetPack.Bridge.Editor
         int endIndex = json.LastIndexOf('}');
 
         string innerJson = json[startIndex..endIndex];
+        Utility.Log($"Received response: {innerJson}");
         O output = JsonUtility.FromJson<O>(innerJson);
         args.onSuccess?.Invoke(output);
       }
@@ -101,6 +115,11 @@ namespace AssetPack.Bridge.Editor
     {
       string data = JsonUtility.ToJson(input);
       yield return SendRequest("callback/poll", args, data);
+    }
+
+    public static IEnumerator DownloadPack(RequestArgs<PackDownloadOutput> args)
+    {
+      yield return SendRequest("pack/download", args, "{}", Utility.GetIdToken());
     }
   }
 }
