@@ -1,7 +1,9 @@
 {
     "name": "AssetPack.Bridge.Editor",
     "rootNamespace": "AssetPack.Bridge.Editor",
-    "references": [],
+    "references": [
+        "Unity.EditorCoroutines.Editor"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
