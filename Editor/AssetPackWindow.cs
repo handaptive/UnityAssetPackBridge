@@ -38,7 +38,7 @@ namespace AssetPack.Bridge.Editor
 
       PackDownloadOutput output = null;
       yield return BridgeAPI.GetDownloadablePack(
-        new PackDownloadInput() { packId = "1qX25o7jTsWrQyzQRgqh" },
+        new PackDownloadInput() { packId = "zSGhLkez9usUvT98VuGI" },
         new RequestArgs<PackDownloadOutput>
         {
           onSuccess = (result) =>
