@@ -58,6 +58,23 @@ namespace AssetPack.Bridge.Editor
     public Model[] models;
   }
 
+  [System.Serializable]
+  public class PackListOutput
+  {
+    [System.Serializable]
+    public class Pack
+    {
+      public string id;
+      public string name;
+      public string description;
+      public bool isDeleted;
+      public string conceptImageUrl;
+    }
+
+    public Pack[] packs;
+  }
+
+
   public struct RequestArgs<O>
   {
     public System.Action<O> onSuccess;
@@ -169,6 +186,11 @@ namespace AssetPack.Bridge.Editor
     public static IEnumerator GetDownloadablePack(PackDownloadInput input, RequestArgs<PackDownloadOutput> args)
     {
       yield return SendAuthorizedRequest("pack/download", args, JsonUtility.ToJson(input));
+    }
+
+    public static IEnumerator GetListPacks(RequestArgs<PackListOutput> args)
+    {
+      yield return SendAuthorizedRequest("pack/list", args, "{}");
     }
 
     public static IEnumerator DownloadFile(string path, string downloadUrl)

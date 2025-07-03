@@ -1,0 +1,81 @@
+Label {
+    font-size: 20px;
+    -unity-font-style: bold;
+}
+
+.row {
+    flex-direction: row;
+    justify-content: space-between;
+    padding-left: 164px;
+}
+
+.column {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-content: flex-start;
+    align-items: flex-start;
+    min-height: 164px;
+}
+
+#scrollView .unity-scroll-view__content-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+#packScrollView .unity-scroll-view__content-container {
+    flex-direction: column;
+    flex-wrap: nowrap;
+}
+
+.packContainerImage {
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.packContainer {
+    padding: 4px;
+}
+
+.internalContainer {
+    border-radius: 8px;
+    width: 140px;
+    height: 160px;
+}
+
+.packLabel {
+    font-size: 14px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.packDescription {
+    font-size: 12px;
+    overflow: hidden;
+    white-space: normal;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 164px;
+}
+
+.packImage {
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.packImage {
+    overflow: hidden;
+    border-radius: 8px;
+    width: 160px;
+    height: 160px;
+    min-height: 0px;
+    max-height: 200px;
+    align-self: flex-start;
+    position: absolute;
+    top: 0;
+}
+
+.modelLabel {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
