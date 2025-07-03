@@ -411,7 +411,13 @@ namespace AssetPack.Bridge.Editor
 
     void OnGUI()
     {
-      errorElement.text = null;
+      if (errorElement == null) return;
+      if (errorNoAuthElement == null) return;
+      if (packView == null) return;
+      if (authElement == null) return;
+      if (noAuthElement == null) return;
+
+      errorElement.text = null; // null here
       errorNoAuthElement.text = null;
       packView.style.display = DisplayStyle.None;
       authElement.style.display = DisplayStyle.None;
