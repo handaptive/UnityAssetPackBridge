@@ -2,7 +2,10 @@ using UnityEngine;
 using UnityEditor;
 using Unity.EditorCoroutines.Editor;
 using System.Collections;
+using UnityEngine.UIElements;
 using UnityEngine.Networking;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace AssetPack.Bridge.Editor
 {
@@ -10,9 +13,29 @@ namespace AssetPack.Bridge.Editor
   {
     public const string WindowName = "Asset Pack";
     private string _errorMessage = string.Empty;
+    private PackListOutput.Pack[] _allPacks = new PackListOutput.Pack[0];
 
     private CallbackController _callback = new();
+    private EditorCoroutine _packListRoutine = null;
     private EditorCoroutine _downloadRoutine = null;
+    private EditorCoroutine _packModelsRoutine = null;
+
+    private PackListOutput.Pack _activePack = null;
+    private PackDownloadOutput.Model[] _packModels = new PackDownloadOutput.Model[0];
+
+    private Label errorElement = null;
+    private Label errorNoAuthElement = null;
+    private ScrollView scrollView = null;
+    private VisualElement authElement = null;
+    private VisualElement noAuthElement = null;
+    private Dictionary<string, Texture2D> conceptImages = new();
+    private VisualElement packView = null;
+    private Label packLabel = null;
+    private Label packDescription = null;
+    private Button packDownload = null;
+    private Label packDownloading = null;
+    private Image packImage = null;
+    private ScrollView packScrollView = null;
 
     [MenuItem("Window/Asset Pack")]
     public static void ShowWindow()
@@ -32,13 +55,13 @@ namespace AssetPack.Bridge.Editor
       _callback.Errored -= OnCallbackErrored;
     }
 
-    private IEnumerator StartDownloadPack()
+    private IEnumerator StartDownloadPackModelRefs(string packId)
     {
-      Utility.Log("Starting pack download...");
-
+      packDownload.SetEnabled(false);
+      _packModels = new PackDownloadOutput.Model[0];
       PackDownloadOutput output = null;
       yield return BridgeAPI.GetDownloadablePack(
-        new PackDownloadInput() { packId = "zSGhLkez9usUvT98VuGI" },
+        new PackDownloadInput() { packId = packId },
         new RequestArgs<PackDownloadOutput>
         {
           onSuccess = (result) =>
@@ -56,13 +79,28 @@ namespace AssetPack.Bridge.Editor
       if (output == null)
       {
         Utility.LogError("Pack download output is null.");
+        packDownload.SetEnabled(true);
         yield break;
       }
 
-      for (int i = 0; i < output.models.Length; i++)
+      _packModels = output.models.OrderBy(m => m.name).ToArray();
+      packDownload.SetEnabled(true);
+      RefreshView();
+    }
+
+    private IEnumerator StartDownloadPack()
+    {
+      Utility.Log("Starting pack download...");
+      packDownload.SetEnabled(false);
+      packDownloading.style.display = DisplayStyle.Flex;
+
+      // make sure we download the model info first
+      yield return _packListRoutine;
+
+      for (int i = 0; i < _packModels.Length; i++)
       {
-        var model = output.models[i];
-        Utility.Log($"Model {i + 1}/{output.models.Length}: {model.name}");
+        var model = _packModels[i];
+        Utility.Log($"Model {i + 1}/{_packModels.Length}: {model.name}");
 
         var meshPath = Utility.GetModelFilePath("myPack", model.name, "mesh.fbx");
         yield return BridgeAPI.DownloadFile(meshPath, model.fbxUrl);
@@ -120,7 +158,49 @@ namespace AssetPack.Bridge.Editor
       AssetDatabase.SaveAssets();
       AssetDatabase.Refresh();
       _downloadRoutine = null;
+      packDownload.SetEnabled(true);
+      packDownloading.style.display = DisplayStyle.None;
       ClearError();
+      RefreshView();
+    }
+
+    private IEnumerator StartListPacks()
+    {
+      Utility.Log($"Starting listing packs...");
+
+      PackListOutput output = null;
+      yield return BridgeAPI.GetListPacks(
+        new RequestArgs<PackListOutput>
+        {
+          onSuccess = (result) =>
+          {
+            output = result;
+            Utility.Log($"Packs listed successfully: {output.packs.Length} packs found.");
+          },
+          onError = (error) =>
+          {
+            Utility.LogError($"Pack list failed: {error}");
+            _errorMessage = error;
+          }
+        });
+
+      if (output == null)
+      {
+        Reset();
+        RefreshView();
+        yield break;
+      }
+
+      _allPacks = output.packs.OrderBy(p => p.name).ToArray();
+
+      for (int i = 0; i < _allPacks.Length; i++)
+      {
+        PackListOutput.Pack pack = _allPacks[i];
+        string url = pack.conceptImageUrl;
+        EditorCoroutineUtility.StartCoroutine(DownloadPackImage(url), this);
+      }
+
+      RefreshView();
     }
 
     private void ClearError()
@@ -133,6 +213,13 @@ namespace AssetPack.Bridge.Editor
       Utility.Log("User logged in successfully.");
       ClearError();
       Repaint();
+
+      // load pack list on login
+      if (_packListRoutine != null)
+      {
+        EditorCoroutineUtility.StopCoroutine(_packListRoutine);
+      }
+      _packListRoutine = EditorCoroutineUtility.StartCoroutine(StartListPacks(), this);
     }
 
     private void OnCallbackErrored(string error)
@@ -142,64 +229,212 @@ namespace AssetPack.Bridge.Editor
       Repaint();
     }
 
-    void OnGUI()
+    private void RefreshView()
     {
-      GUILayout.Label(WindowName, EditorStyles.boldLabel);
-      GUILayout.Space(10);
-
-      if (Utility.IsLoggedIn())
+      if (_activePack != null && _activePack.id != "")
       {
-        AuthGUI();
+        RefreshPackView();
       }
       else
       {
-        NoAuthGUI();
+        RefreshScrollView();
       }
     }
 
-    void NoAuthGUI()
+    private void RefreshPackView()
     {
-      GUILayout.Label("You are not logged in.", EditorStyles.boldLabel);
-      GUILayout.Space(10);
-
-      if (!string.IsNullOrEmpty(_errorMessage))
+      if (_activePack == null) return;
+      packLabel.text = _activePack.name;
+      packDescription.text = _activePack.description;
+      if (conceptImages.ContainsKey(_activePack.conceptImageUrl))
       {
-        GUILayout.Label($"Error: {_errorMessage}", EditorStyles.wordWrappedLabel);
-        GUILayout.Space(10);
+        packImage.image = conceptImages[_activePack.conceptImageUrl];
       }
 
-      if (GUILayout.Button("Login"))
+      if (packScrollView == null) return;
+
+      packScrollView.Clear();
+      for (int i = 0; i < _packModels.Length; i++)
+      {
+        var model = _packModels[i];
+        Label label = new() { text = model.name };
+        packScrollView.Add(label);
+      }
+    }
+
+    private void RefreshScrollView()
+    {
+      if (scrollView == null) return;
+
+      scrollView.Clear();
+      for (int i = 0; i < _allPacks.Length; i++)
+      {
+        PackListOutput.Pack pack = _allPacks[i];
+
+        VisualElement outerContainer = new();
+        outerContainer.AddToClassList("packContainer");
+        VisualElement container = new();
+        container.AddToClassList("internalContainer");
+        Label label = new() { text = pack.name };
+        label.AddToClassList("packLabel");
+        Texture2D texture;
+        if (conceptImages.ContainsKey(pack.conceptImageUrl))
+        {
+          texture = conceptImages[pack.conceptImageUrl];
+        }
+        else
+        {
+          texture = new Texture2D(256, 256);
+          Color solidColor = new Color(1f, 1f, 1f, 0f);
+          Color[] pixels = new Color[256 * 256];
+          for (int j = 0; j < pixels.Length; j++)
+          {
+            pixels[j] = solidColor;
+          }
+          texture.SetPixels(pixels);
+          texture.Apply();
+          conceptImages[pack.conceptImageUrl] = texture;
+        }
+        Image image = new() { image = texture };
+        image.AddToClassList("packContainerImage");
+
+        container.Add(image);
+        container.Add(label);
+        outerContainer.Add(container);
+        scrollView.Add(outerContainer);
+
+        container.RegisterCallback<ClickEvent>((evt) =>
+        {
+          _activePack = pack;
+
+          Utility.Log($"Active pack: {pack.name}");
+          if (_packModelsRoutine != null)
+          {
+            EditorCoroutineUtility.StopCoroutine(_packModelsRoutine);
+          }
+          _packModelsRoutine = EditorCoroutineUtility.StartCoroutine(StartDownloadPackModelRefs(pack.id), this);
+          RefreshView();
+        });
+      }
+    }
+
+    private IEnumerator DownloadPackImage(string url)
+    {
+      UnityWebRequest www = UnityWebRequestTexture.GetTexture(url);
+      yield return www.SendWebRequest();
+
+      if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
+      {
+        Utility.Log(www.error);
+        _errorMessage = www.error;
+      }
+      else
+      {
+        Texture2D myTexture = DownloadHandlerTexture.GetContent(www);
+        if (myTexture != null)
+        {
+          conceptImages[url] = myTexture;
+        }
+      }
+      RefreshView();
+    }
+
+    public void CreateGUI()
+    {
+      // Each editor window contains a root VisualElement object.
+      VisualElement root = rootVisualElement;
+
+      // Import UXML.
+      var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/Bridge/Editor/AssetPackWindow.uxml");
+      VisualElement ScrollViewExample = visualTree.Instantiate();
+      root.Add(ScrollViewExample);
+
+      // Find the relevant views by name.
+      errorElement = root.Query<Label>("error");
+      errorNoAuthElement = root.Query<Label>("errorNoAuth");
+      scrollView = root.Query<ScrollView>("scrollView");
+      authElement = root.Query<VisualElement>("auth");
+      noAuthElement = root.Query<VisualElement>("noAuth");
+      packView = root.Query<VisualElement>("pack");
+      packLabel = root.Query<Label>("packLabel");
+      packDescription = root.Query<Label>("packDescription");
+      packImage = root.Query<Image>("packImage");
+      packDownloading = root.Query<Label>("packDownloading");
+      packDownloading.style.display = DisplayStyle.None;
+      packScrollView = root.Query<ScrollView>("packScrollView");
+
+      // Setup static button callbacks.
+      Button logoutButton = root.Query<Button>("logout");
+      logoutButton.clicked += () =>
+      {
+        Utility.Log("Logging out...");
+        Utility.ClearTokens();
+        Reset();
+      };
+      Button loginButton = root.Query<Button>("login");
+      loginButton.clicked += () =>
       {
         Utility.Log("Starting login process...");
         _callback.Start();
         ClearError();
-      }
-
-      GUILayout.Space(10);
-      GUILayout.Label("After logging in, return to this window to see your status.", EditorStyles.wordWrappedLabel);
-    }
-
-    void AuthGUI()
-    {
-      GUILayout.Label("You are logged in.", EditorStyles.boldLabel);
-      GUILayout.Space(10);
-
-      if (GUILayout.Button("Logout"))
+      };
+      Button refreshButton = root.Query<Button>("refresh");
+      refreshButton.clicked += () =>
       {
-        Utility.Log("Logging out...");
-        Utility.ClearTokens();
-        NoAuthGUI();
-      }
-
-      if (GUILayout.Button("Download Asset Pack"))
+        Utility.Log("Starting pack list refresh...");
+        if (_packListRoutine != null)
+        {
+          EditorCoroutineUtility.StopCoroutine(_packListRoutine);
+        }
+        _packListRoutine = EditorCoroutineUtility.StartCoroutine(StartListPacks(), this);
+      };
+      Button packCloseButton = root.Query<Button>("packClose");
+      packCloseButton.clicked += () =>
       {
-        Utility.Log("Starting asset pack download...");
+        _activePack = null;
+        _packModels = new PackDownloadOutput.Model[0];
+        RefreshView();
+      };
+      packDownload = root.Query<Button>("packDownload");
+      packDownload.clicked += () =>
+      {
+        Utility.Log("Starting pack download...");
         if (_downloadRoutine != null)
         {
           EditorCoroutineUtility.StopCoroutine(_downloadRoutine);
         }
         _downloadRoutine = EditorCoroutineUtility.StartCoroutine(StartDownloadPack(), this);
+      };
+
+      RefreshView();
+    }
+
+    void OnGUI()
+    {
+      errorElement.text = null;
+      errorNoAuthElement.text = null;
+      packView.style.display = DisplayStyle.None;
+      authElement.style.display = DisplayStyle.None;
+      noAuthElement.style.display = DisplayStyle.None;
+
+      if (Utility.IsLoggedIn())
+      {
+        errorElement.text = _errorMessage;
+        if (_activePack != null && _activePack.id != "") packView.style.display = DisplayStyle.Flex;
+        else authElement.style.display = DisplayStyle.Flex;
       }
+      else
+      {
+        errorNoAuthElement.text = _errorMessage;
+        noAuthElement.style.display = DisplayStyle.Flex;
+      }
+    }
+
+    void Reset()
+    {
+      _activePack = null;
+      _packModels = new PackDownloadOutput.Model[0];
+      _allPacks = new PackListOutput.Pack[0];
     }
   }
 }

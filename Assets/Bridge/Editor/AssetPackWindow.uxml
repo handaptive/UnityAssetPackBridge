@@ -1,0 +1,35 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements"
+    xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements"
+    editor="UnityEditor.UIElements"
+    noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="AssetPackWindow.uss" />
+    <ui:VisualElement>
+        <ui:Label text="Asset Pack" />
+    </ui:VisualElement>
+    <ui:VisualElement name="noAuth">
+        <ui:Label text="You are not logged in" />
+        <ui:Label name="errorNoAuth" />
+        <ui:Button name="login" text="Login" />
+    </ui:VisualElement>
+    <ui:VisualElement name="auth">
+        <ui:Label text="You are logged in" />
+        <ui:Label name="error" />
+        <ui:Button name="logout" text="Logout" />
+        <ui:Button name="refresh" text="Refresh" />
+        <ui:ScrollView name="scrollView" />
+    </ui:VisualElement>
+    <ui:VisualElement name="pack">
+        <ui:Image name="packImage" class="packImage" />
+        <ui:VisualElement class="column">
+            <ui:VisualElement class="row">
+                <ui:Button name="packClose" text="Back" />
+                <ui:Label name="packLabel" />
+            </ui:VisualElement>
+            <ui:Label name="packDescription" class="packDescription" />
+        </ui:VisualElement>
+        <ui:Button name="packDownload" text="Download" />
+        <ui:Label name="packDownloading" text="Downloading..." />
+        <ui:Label text="Models:" class="modelLabel" />
+        <ui:ScrollView name="packScrollView" />
+    </ui:VisualElement>
+</ui:UXML>
