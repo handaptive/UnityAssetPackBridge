@@ -2,7 +2,9 @@
     "name": "AssetPack.Bridge",
     "rootNamespace": "AssetPack.Bridge",
     "references": [],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
