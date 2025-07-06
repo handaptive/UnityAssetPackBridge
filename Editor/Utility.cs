@@ -39,6 +39,11 @@ namespace AssetPack.Bridge.Editor
       return GetConfig()?.bridgeEndpoint ?? "https://us-central1-assetpack-prod.cloudfunctions.net/bridge";
     }
 
+    public static bool IsDevMode()
+    {
+      return GetConfig()?.devMode ?? false;
+    }
+
     public static bool IsDebugMode()
     {
       return GetConfig()?.debugMode ?? false;
@@ -200,10 +205,22 @@ namespace AssetPack.Bridge.Editor
       return absolutePath;
     }
 
+    public static string PackageRootPath()
+    {
+      return IsDevMode() ? "Assets/Bridge" : "Packages/ai.assetpack.bridge";
+    }
+
+    public static string PackagePath(string relativePath)
+    {
+      return Path.Combine(PackageRootPath(), relativePath);
+    }
+
+
     [System.Serializable]
     private class Config
     {
       public string websiteUrl;
+      public bool devMode;
       public bool debugMode;
       public string flavor;
       public string bridgeEndpoint;

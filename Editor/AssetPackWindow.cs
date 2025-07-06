@@ -345,7 +345,7 @@ namespace AssetPack.Bridge.Editor
       VisualElement root = rootVisualElement;
 
       // Import UXML.
-      var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/Bridge/Editor/AssetPackWindow.uxml");
+      var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(Utility.PackagePath("Editor/AssetPackWindow.uxml"));
       VisualElement ScrollViewExample = visualTree.Instantiate();
       root.Add(ScrollViewExample);
 
