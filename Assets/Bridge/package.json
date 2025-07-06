@@ -1,6 +1,6 @@
 {
   "name": "ai.assetpack.bridge",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "displayName": "Asset Pack Bridge",
   "description": "A tool to help you download your asset pack into your Unity project.",
   "unity": "2019.1",
