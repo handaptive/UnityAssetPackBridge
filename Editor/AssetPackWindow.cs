@@ -102,17 +102,17 @@ namespace AssetPack.Bridge.Editor
         var model = _packModels[i];
         Utility.Log($"Model {i + 1}/{_packModels.Length}: {model.name}");
 
-        var meshPath = Utility.GetModelFilePath("myPack", model.name, "mesh.fbx");
+        var meshPath = Utility.GetModelFilePath(_activePack.name, model.name, "mesh.fbx");
         yield return BridgeAPI.DownloadFile(meshPath, model.fbxUrl);
 
-        var diffusePath = Utility.GetModelFilePath("myPack", model.name, "diffuse.png");
+        var diffusePath = Utility.GetModelFilePath(_activePack.name, model.name, "diffuse.png");
         yield return BridgeAPI.DownloadFile(diffusePath, model.diffuseUrl);
 
         // Refresh asset database to ensure texture is imported
         AssetDatabase.ImportAsset(Utility.AssetRelativePath(diffusePath));
         AssetDatabase.Refresh();
 
-        var materialPath = Utility.GetModelFilePath("myPack", model.name, "material.mat");
+        var materialPath = Utility.GetModelFilePath(_activePack.name, model.name, "material.mat");
         Utility.Log($"Creating material at {materialPath}");
         var material = new Material(Shader.Find("Universal Render Pipeline/Lit"))
         {
@@ -123,7 +123,7 @@ namespace AssetPack.Bridge.Editor
         material.SetFloat("_Metallic", 0f);
         AssetDatabase.CreateAsset(material, Utility.AssetRelativePath(materialPath));
 
-        var prefabPath = Utility.GetModelFilePath("myPack", model.name, "prefab.prefab");
+        var prefabPath = Utility.GetPrefabFilePath(_activePack.name, model.name);
         Utility.Log($"Creating prefab at {prefabPath}");
         var prefab = new GameObject(model.name);
 
@@ -135,15 +135,13 @@ namespace AssetPack.Bridge.Editor
           meshInstance.name = model.name + "_Mesh";
         }
 
-        // // Assign the material to the mesh
-        // var meshRenderer = prefab.GetComponentInChildren<Renderer>();
-        // if (meshRenderer != null)
-        // {
-        //   Utility.Log($"Assigning material to mesh renderer: {meshRenderer.name}");
-        //   meshRenderer.material = material;
-        //   meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-        //   meshRenderer.receiveShadows = true;
-        // }
+        // Assign the material to the mesh
+        var meshRenderer = prefab.GetComponentInChildren<Renderer>();
+        if (meshRenderer != null)
+        {
+          Utility.Log($"Assigning material to mesh renderer: {meshRenderer.name}");
+          meshRenderer.sharedMaterial = material;
+        }
 
         // Save the prefab
         PrefabUtility.SaveAsPrefabAsset(prefab, Utility.AssetRelativePath(prefabPath));
