@@ -131,21 +131,29 @@ namespace AssetPack.Bridge.Editor
         var meshAsset = AssetDatabase.LoadAssetAtPath<GameObject>(Utility.AssetRelativePath(meshPath));
         if (meshAsset != null)
         {
-          var meshInstance = Instantiate(meshAsset, prefab.transform);
+          var meshInstance = PrefabUtility.InstantiatePrefab(meshAsset, prefab.transform) as GameObject;
           meshInstance.name = model.name + "_Mesh";
-        }
-
-        // Assign the material to the mesh
-        var meshRenderer = prefab.GetComponentInChildren<Renderer>();
-        if (meshRenderer != null)
-        {
-          Utility.Log($"Assigning material to mesh renderer: {meshRenderer.name}");
-          meshRenderer.sharedMaterial = material;
         }
 
         // Save the prefab
         PrefabUtility.SaveAsPrefabAsset(prefab, Utility.AssetRelativePath(prefabPath));
         Utility.Log($"Prefab created at {prefabPath}");
+
+        // Open up the prefab in the editor
+        AssetDatabase.OpenAsset(prefab);
+        Utility.Log($"Prefab opened in editor: {prefab.name}");
+
+        // apply the material to the prefab
+        var prefabRenderer = prefab.GetComponentInChildren<Renderer>();
+        if (prefabRenderer != null)
+        {
+          Utility.Log($"Assigning material to prefab renderer: {prefabRenderer.name}");
+          prefabRenderer.sharedMaterial = material;
+        }
+
+        // Save the prefab again after assigning the material
+        PrefabUtility.SaveAsPrefabAsset(prefab, Utility.AssetRelativePath(prefabPath));
+        Utility.Log($"Prefab updated with material at {prefabPath}");
 
         // Clean up the temporary prefab GameObject
         DestroyImmediate(prefab);
