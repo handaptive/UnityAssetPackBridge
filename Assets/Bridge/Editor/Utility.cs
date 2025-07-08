@@ -188,12 +188,22 @@ namespace AssetPack.Bridge.Editor
 
     public static string GetModelFolder(string packName, string modelName)
     {
-      return GetFolder(Path.Combine(GetPackFolder(packName), FormatName(modelName)));
+      return GetFolder(Path.Combine(GetPackFolder(packName), "models", FormatName(modelName)));
     }
 
     public static string GetModelFilePath(string packName, string modelName, string fileName)
     {
       return Path.Combine(GetModelFolder(packName, modelName), fileName);
+    }
+
+    public static string GetPrefabFolder(string packName)
+    {
+      return GetFolder(Path.Combine(GetPackFolder(packName), "prefabs"));
+    }
+
+    public static string GetPrefabFilePath(string packName, string modelName)
+    {
+      return Path.Combine(GetPrefabFolder(packName), $"{FormatName(modelName)}.prefab");
     }
 
     public static string AssetRelativePath(string absolutePath)
