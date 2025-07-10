@@ -4,7 +4,7 @@ A Unity package that connects to [assetpack.ai](https://assetpack.ai/) and allow
 
 ## Features
 
-- Connect to your assetpack.ai account
+- Connect to your [assetpack.ai](https://assetpack.ai/) account
 - Download asset packs in bulk
 - Keep assets synchronized with your online asset packs
 - Automatically pull updates when changes are made to your asset packs
@@ -20,7 +20,7 @@ https://github.com/handaptive/UnityAssetPackBridge.git#upm
 ## Usage
 
 1. Open **Window > Asset Pack** in Unity
-2. Log in with your assetpack.ai credentials
+2. Log in with your [assetpack.ai](https://assetpack.ai/) credentials
 3. Select your asset pack from the list
 4. Click **Download** to sync your assets
 
