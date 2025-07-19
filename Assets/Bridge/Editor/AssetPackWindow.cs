@@ -106,17 +106,18 @@ namespace AssetPack.Bridge.Editor
         yield return BridgeAPI.DownloadFile(meshPath, model.fbxUrl);
 
         var diffusePath = Utility.GetModelFilePath(_activePack.name, model.name, "diffuse.png");
-        yield return BridgeAPI.DownloadFile(diffusePath, model.diffuseUrl);
-
-        // Refresh asset database to ensure texture is imported
-        AssetDatabase.ImportAsset(Utility.AssetRelativePath(diffusePath));
-        AssetDatabase.Refresh();
+        if (diffusePath != null)
+        {
+          yield return BridgeAPI.DownloadFile(diffusePath, model.diffuseUrl);
+          AssetDatabase.ImportAsset(Utility.AssetRelativePath(diffusePath));
+          AssetDatabase.Refresh();
+        }
 
         var materialPath = Utility.GetModelFilePath(_activePack.name, model.name, "material.mat");
         Utility.Log($"Creating material at {materialPath}");
         var material = new Material(Shader.Find("Universal Render Pipeline/Lit"))
         {
-          mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(Utility.AssetRelativePath(diffusePath))
+          mainTexture = diffusePath != null ? AssetDatabase.LoadAssetAtPath<Texture2D>(Utility.AssetRelativePath(diffusePath)) : null
         };
         // remove smoothness and metallic properties
         material.SetFloat("_Smoothness", 0f);
