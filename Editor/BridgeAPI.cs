@@ -53,6 +53,7 @@ namespace AssetPack.Bridge.Editor
       public string name;
       public string fbxUrl;
       public string diffuseUrl;
+      public float scale;
     }
 
     public Model[] models;
@@ -69,6 +70,7 @@ namespace AssetPack.Bridge.Editor
       public string description;
       public bool isDeleted;
       public string conceptImageUrl;
+      public bool lowPolyTexturePixelization;
     }
 
     public Pack[] packs;

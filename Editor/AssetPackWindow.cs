@@ -109,7 +109,38 @@ namespace AssetPack.Bridge.Editor
         if (diffusePath != null)
         {
           yield return BridgeAPI.DownloadFile(diffusePath, model.diffuseUrl);
-          AssetDatabase.ImportAsset(Utility.AssetRelativePath(diffusePath));
+
+          // Configure texture import settings
+          var relativePath = Utility.AssetRelativePath(diffusePath);
+          AssetDatabase.ImportAsset(relativePath);
+
+          var textureImporter = AssetImporter.GetAtPath(relativePath) as TextureImporter;
+          if (textureImporter != null)
+          {
+            if (_activePack.lowPolyTexturePixelization)
+            {
+              int textureSize;
+              if (model.scale < .5)
+                textureSize = 64;
+              else if (model.scale < 2)
+                textureSize = 128;
+              else if (model.scale < 4)
+                textureSize = 256;
+              else
+                textureSize = 512;
+
+              textureImporter.maxTextureSize = textureSize;
+              textureImporter.filterMode = FilterMode.Point;
+            }
+            else
+            {
+              textureImporter.maxTextureSize = 2048;
+              textureImporter.filterMode = FilterMode.Bilinear;
+            }
+
+            textureImporter.SaveAndReimport();
+          }
+
           AssetDatabase.Refresh();
         }
 
