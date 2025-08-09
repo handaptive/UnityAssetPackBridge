@@ -54,6 +54,7 @@ namespace AssetPack.Bridge.Editor
       public string fbxUrl;
       public string diffuseUrl;
       public float scale;
+      public bool applyPointFilter;
     }
 
     public Model[] models;
