@@ -102,8 +102,17 @@ namespace AssetPack.Bridge.Editor
         var model = _packModels[i];
         Utility.Log($"Model {i + 1}/{_packModels.Length}: {model.name}");
 
-        var meshPath = Utility.GetModelFilePath(_activePack.name, model.name, "mesh.fbx");
-        yield return BridgeAPI.DownloadFile(meshPath, model.fbxUrl);
+        string meshPath;
+        if (model.fbxUrl != null)
+        {
+          meshPath = Utility.GetModelFilePath(_activePack.name, model.name, "mesh.fbx");
+          yield return BridgeAPI.DownloadFile(meshPath, model.fbxUrl);
+        }
+        else
+        {
+          meshPath = Utility.GetModelFilePath(_activePack.name, model.name, "mesh.glb");
+          yield return BridgeAPI.DownloadFile(meshPath, model.glbUrl);
+        }
 
         var diffusePath = Utility.GetModelFilePath(_activePack.name, model.name, "diffuse.png");
         if (diffusePath != null)

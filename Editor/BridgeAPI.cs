@@ -52,6 +52,7 @@ namespace AssetPack.Bridge.Editor
     {
       public string name;
       public string fbxUrl;
+      public string glbUrl;
       public string diffuseUrl;
       public float scale;
       public bool applyPointFilter;
